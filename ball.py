@@ -2,19 +2,22 @@ import random
 import pygame
 
 class Ball:
-    def __init__(self, screen):
+    def __init__(self, screen, speed=1):
+        self.speed = speed
         self.screen = screen
-        self.xPos = self.screen.get_width() / 2
-        self.yPos = self.screen.get_height() * 0.75
-        self.xVel = random.choice([-5, -4, -3, -2, 2, 3, 4, 5]) / 5
-        self.yVel = -(random.randint(3, 9)) / 5
+        self.screenWidth = self.screen.get_width()
+        self.screenHeight = self.screen.get_height()
+        self.xPos = self.screenWidth / 2
+        self.yPos = self.screenHeight * 0.85
+        self.xVel = random.choice([-(random.random()), (random.random())])
+        self.yVel = -(random.random() + 0.25)
         self.radius = 5
         self.rect = pygame.Rect(self.xPos, self.yPos, self.radius, self.radius)
         pass
 
     def updatePosition(self):
-        self.xPos += self.xVel
-        self.yPos += self.yVel
+        self.xPos += self.xVel * self.speed
+        self.yPos += self.yVel * self.speed
         pass
 
     def flipVelocity(self, vel):
@@ -31,13 +34,13 @@ class Ball:
         pass
 
     def checkBallPos(self):
-        if  self.xPos <= 0 or self.xPos >= self.screen.get_width():
+        if  self.xPos <= 60 or self.xPos >= self.screenWidth - 60:
             self.flipVelocity('x')
+            return True
         if self.yPos <= 0:
             self.flipVelocity('y')
-        if self.yPos > self.screen.get_height():
+            return True
+        if self.yPos > self.screenHeight:
             #give some sort of punishment
-            self.xPos = 200
-            self.yPos = 200
             return False
         return True

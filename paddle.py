@@ -4,7 +4,7 @@ import numpy as np
 from neuralNetwork.neuralNetwork import NeuralNetwork
 
 class Paddle:
-    def __init__(self, screen, brain=None):
+    def __init__(self, screen, brain=None, speed=1):
         if brain is not None:
             self.brain = brain
         else:
@@ -12,10 +12,11 @@ class Paddle:
         self.screen = screen
         self.fitness = 0
         self.score = 0
+        self.hits = 0
         self.width = 50
         self.height = 10
-        self.pos = (self.screen.get_width() / 2) - (self.width / 2)
-        self.speed = 0.8
+        self.pos = 0
+        self.speed = speed * 2
         self.xUpperLimit = screen.get_width()
         self.xLowerLimit = 0
         self.rect = pygame.Rect(self.pos, self.screen.get_height() - self.height, self.width, self.height)
@@ -41,6 +42,7 @@ class Paddle:
             if ball.yPos >= self.screen.get_height() - self.height:
                 ball.yPos -= (self.height / 2)
                 ball.flipVelocity('y')
+                self.hits += 1
                 return True
         return False
         
