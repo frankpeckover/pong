@@ -7,16 +7,19 @@ class Pong:
     def __init__(self):
         pygame.init()
         self.font = pygame.font.SysFont('Comic Sans MS', 30)
-        self.screen = pygame.display.set_mode([800, 600])
+        self.screen = pygame.display.set_mode([1820, 980])
         self.screenWidth = self.screen.get_width()
         self.screenHeight = self.screen.get_height()
 
-        self.simSpeed = 0.5
+        self.simSpeed = 3
 
         self.population = []
         self.balls = []
         self.previousPopulation = []
-        self.populationSize = 50
+        self.populationSize = 256
+        self.averageFitnessHistory = []
+        self.maximumScoreHistory = []
+        self.maximumHitsHistory = []
 
         self.createPopulation()
         self.createBalls()
@@ -43,26 +46,48 @@ class Pong:
         sumScore = 0
         sumHits = 0
         for paddle in self.previousPopulation:
-            sumScore += paddle.score 
-            sumHits += paddle.hits
+            sumScore += paddle.timeUnderBall
+            sumHits += paddle.ballHits
         for paddle in self.previousPopulation:
-            if sumHits:
-                paddle.fitness = paddle.hits / sumHits
+            paddle.fitness = ((paddle.timeUnderBall * paddle.ballHits) + (15000  / paddle.distanceFromBall)) ** 2
         pass
+
+    def calculateStatistics(self):
+        totalFitness = 0
+        maximumScore = 0
+        maximumHits = 0
+        for paddle in self.previousPopulation:
+            if paddle.timeUnderBall > maximumScore:
+                maximumScore = paddle.timeUnderBall
+            if paddle.ballHits > maximumHits:
+                maximumHits = paddle.ballHits
+            totalFitness += paddle.fitness
+        self.averageFitnessHistory.append(totalFitness/len(self.previousPopulation))
+        self.maximumScoreHistory.append(maximumScore)
+        self.maximumHitsHistory.append(maximumHits)
+        pass 
 
     #build the next generation
     def nextGeneration(self):
         self.evaluateFitness()
+        self.calculateStatistics()
         for i in range(self.populationSize):
-            parent1 = self.selectParent()
-            parent2 = self.selectParent()
-            child = self.crossover(parent1, parent2, 0.9)
-            child.brain.mutate(0.01)
+            parent1 = self.selectRandomBiasedParent()
+            parent2 = self.selectRandomBiasedParent()
+            child = self.crossover(parent1, parent2, 1)
+            
+            # parent1 = self.selectFittestParent()
+            # child = self.crossover(parent1, parent1, 1)
+            if nprand.random() < 0.75:
+                child.brain.mutate(0.1)
             self.population.append(child)
         self.createBalls()
+        print("Average Fitness: ", self.averageFitnessHistory[-5:])
+        print("Maximum Score: ", self.maximumScoreHistory[-5:])
+        print("Maximum Hits: ", self.maximumHitsHistory[-5:])
 
 
-    def selectParent(self, k=3):
+    def selectRandomBiasedParent(self, k=3):
 	# first random selection
         index = nprand.randint(len(self.previousPopulation))
         for i in nprand.randint(0, len(self.previousPopulation), k-1):
@@ -70,6 +95,15 @@ class Pong:
             if self.previousPopulation[i].fitness > self.previousPopulation[index].fitness:
                 index = i
         return self.previousPopulation[index]
+
+    def selectFittestParent(self):
+        maxFitness = 0
+        fittestPaddle = self.previousPopulation[0]
+        for paddle in self.previousPopulation:
+            if paddle.fitness > maxFitness:
+                maxFitness = paddle.fitness
+                fittestPaddle = paddle
+        return fittestPaddle
 
     def crossover(self, parent1, parent2, crossoverRate):
         child = Paddle(self.screen)
@@ -95,9 +129,8 @@ class Pong:
                 ball = self.balls[i]
                 if not ball.checkBallPos():
                     self.previousPopulation.append(paddle)
+                    paddle.distanceFromBall = abs(ball.xPos - paddle.pos)
                     toRemove.append(i)
-                if ball.xPos >= paddle.pos and ball.xPos < paddle.pos + paddle.width:
-                    paddle.score += 1
                 ball.updatePosition()
                 paddle.collisionCheck(ball)
                 prediction = paddle.think([[paddle.pos / self.screenWidth],[ball.xPos / self.screenWidth],[ball.yPos / self.screenHeight], [ball.xVel], [ball.yVel]])
@@ -142,8 +175,13 @@ class Pong:
                             paddle.speed = self.simSpeed
                         for ball in self.balls:
                             ball.speed = self.simSpeed
-                        pass
-                        pass
+                    if event.key == pygame.K_r:
+                        for ball in self.balls:
+                            self.balls = []
+                        for paddle in self.population:
+                            paddle.distanceFromBall = 500
+                            self.previousPopulation.append(paddle)
+                            self.population = []
 
             self.update()
             if (len(self.population) > 0):

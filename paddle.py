@@ -8,11 +8,12 @@ class Paddle:
         if brain is not None:
             self.brain = brain
         else:
-            self.brain = NeuralNetwork([5, 10, 3])
+            self.brain = NeuralNetwork([5, 3])
         self.screen = screen
         self.fitness = 0
-        self.score = 0
-        self.hits = 0
+        self.ballHits = 0
+        self.timeUnderBall = 0
+        self.distanceFromBall = 0
         self.width = 50
         self.height = 10
         self.pos = 0
@@ -39,10 +40,11 @@ class Paddle:
 
     def collisionCheck(self, ball):
         if ball.xPos > self.pos and ball.xPos < self.pos + self.width:
+            self.timeUnderBall += 1
             if ball.yPos >= self.screen.get_height() - self.height:
                 ball.yPos -= (self.height / 2)
                 ball.flipVelocity('y')
-                self.hits += 1
+                self.ballHits += 1
                 return True
         return False
         

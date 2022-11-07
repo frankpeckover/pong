@@ -9,7 +9,7 @@ class Ball:
         self.screenHeight = self.screen.get_height()
         self.xPos = self.screenWidth / 2
         self.yPos = self.screenHeight * 0.85
-        self.xVel = random.choice([-(random.random()), (random.random())])
+        self.xVel = random.choice([-(random.random() + 0.15), (random.random() + 0.15)])
         self.yVel = -(random.random() + 0.25)
         self.radius = 5
         self.rect = pygame.Rect(self.xPos, self.yPos, self.radius, self.radius)
